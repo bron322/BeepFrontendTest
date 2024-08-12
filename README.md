@@ -1,5 +1,7 @@
 # Currency Selection Dashboard
 
+![image](./cover.png)
+
 This mini project is a React-based application designed to provide an intuitive interface for selecting and managing currencies. The dashboard features real-time search capabilities with stable dropdown lists, integrated using both a SyncSearch component and an AutoComplete component.
 
 ## Project Overview
