@@ -12,11 +12,11 @@ The Currency Selection Dashboard allows users to search and select various curre
 
 ## Components and Props
 - `Currency container` component is the main container that manages the state of the selected currencies. It passes necessary props to both the SyncSearch and AutoComplete components, allowing them to interact with the selected currency list.
-- `SyncSearch` component have
-  -`onCheckboxChange` (Function): A function passed from the CurrencyContainer that updates the list of selected currencies when a user selects or deselects a currency.
+- `SyncSearch` component have <br>
+  -`onCheckboxChange` (Function): A function passed from the CurrencyContainer that updates the list of selected currencies when a user selects or deselects a currency. <br>
   -`selectedCurrencies` (Array): An array containing the currencies that have already been selected, used to manage the checkbox states within the component.
-- `AutoComplete` component have
-  -`onCheckboxChange` (Function): Similar to the SyncSearch component, this function is used to update the selected currencies list.
+- `AutoComplete` component have <br>
+  -`onCheckboxChange` (Function): Similar to the SyncSearch component, this function is used to update the selected currencies list. <br>
   -`selectedCurrencies` (Array): This array is used to maintain the selected state of currencies, ensuring consistency across the interface.
 
 ## How it works
