@@ -15,6 +15,7 @@ const SyncSearch: React.FC<SyncSearchProps> = ({ onCheckboxChange, selectedCurre
   const [filteredCurrencies, setFilteredCurrencies] = useState<Currency[]>([]);
   const [isListVisible, setIsListVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
 
   const referenceRef = useRef<HTMLDivElement | null>(null);
   const floatingRef = useRef<HTMLDivElement | null>(null);
@@ -38,10 +39,35 @@ const SyncSearch: React.FC<SyncSearchProps> = ({ onCheckboxChange, selectedCurre
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
+    setIsListVisible(true);
+    setHighlightedIndex(0); // Reset highlight on new search
   };
 
-  const handleInputClick = () => {
-    setIsListVisible(true);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isListVisible || filteredCurrencies.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        setHighlightedIndex((prevIndex) =>
+          prevIndex === null ? 0 : (prevIndex + 1) % filteredCurrencies.length
+        );
+        break;
+      case 'ArrowUp':
+        setHighlightedIndex((prevIndex) =>
+          prevIndex === null ? filteredCurrencies.length - 1 : (prevIndex - 1 + filteredCurrencies.length) % filteredCurrencies.length
+        );
+        break;
+      case 'Enter':
+        if (highlightedIndex !== null) {
+          onCheckboxChange(filteredCurrencies[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        setIsListVisible(false);
+        break;
+      default:
+        break;
+    }
   };
 
   const handleClickOutside = (e: MouseEvent) => {
@@ -58,17 +84,26 @@ const SyncSearch: React.FC<SyncSearchProps> = ({ onCheckboxChange, selectedCurre
     };
   }, []);
 
+  useEffect(() => {
+    if (highlightedIndex !== null && floatingRef.current) {
+      const item = floatingRef.current.querySelectorAll('div[data-index]')[highlightedIndex] as HTMLElement;
+      item?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [highlightedIndex]);
+
   return (
     <div className="w-full max-w-xs mx-auto mt-4 relative">
       <div ref={referenceRef} className="relative">
         <div
           className="flex items-center border border-gray-300 rounded-md shadow-sm focus-within:ring-1 focus-within:ring-blue-500"
-          onClick={handleInputClick}
+          onClick={() => setIsListVisible(true)}
         >
           <FontAwesomeIcon icon={faSearch} className="text-gray-400 ml-3 mr-3" />
           <input
             placeholder="Type to begin searching"
             onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            value={query}
             className="w-full py-2 px-3 border-none rounded-md focus:outline-none"
           />
         </div>
@@ -84,11 +119,13 @@ const SyncSearch: React.FC<SyncSearchProps> = ({ onCheckboxChange, selectedCurre
             ) : filteredCurrencies.length === 0 ? (
               <div className="px-3 py-2 text-gray-500">No results found</div>
             ) : (
-              filteredCurrencies.map((currency) => (
+              filteredCurrencies.map((currency, index) => (
                 <div
                   key={currency.code}
+                  data-index={index}
                   onClick={() => onCheckboxChange(currency)}
-                  className="cursor-pointer select-none relative py-2 pl-3 pr-9 text-gray-900 hover:bg-blue-600 hover:text-white flex items-center"
+                  className={`cursor-pointer select-none relative py-2 pl-3 pr-9 text-gray-900 hover:bg-blue-600 hover:text-white flex items-center
+                    ${highlightedIndex === index ? 'bg-blue-600 text-white' : ''}`}
                 >
                   <input
                     type="checkbox"

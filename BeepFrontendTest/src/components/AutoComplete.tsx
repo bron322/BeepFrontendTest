@@ -6,17 +6,17 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import loadingGif from '../assets/loading.gif';
 
 interface AutoCompleteProps {
-    onCheckboxChange: (currency: Currency) => void;
-    selectedCurrencies: Currency[];
+  onCheckboxChange: (currency: Currency) => void;
+  selectedCurrencies: Currency[];
 }
 
 const AutoComplete: React.FC<AutoCompleteProps> = ({ onCheckboxChange, selectedCurrencies }) => {
   const [query, setQuery] = useState('');
   const [filteredCurrencies, setFilteredCurrencies] = useState<Currency[]>([]);
-  const [isListVisible, setIsListVisible] = useState(false); // State to control list visibility
+  const [isListVisible, setIsListVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
 
-  // Refs for the reference and floating elements
   const referenceRef = useRef<HTMLDivElement | null>(null);
   const floatingRef = useRef<HTMLDivElement | null>(null);
 
@@ -24,16 +24,16 @@ const AutoComplete: React.FC<AutoCompleteProps> = ({ onCheckboxChange, selectedC
     if (query === '') {
       setFilteredCurrencies([]);
     } else {
-      setIsLoading(true); // Show loading
+      setIsLoading(true);
       const timer = setTimeout(() => {
         const results = currencies.filter(currency =>
           currency.name.toLowerCase().includes(query.toLowerCase())
         );
         setFilteredCurrencies(results);
-        setIsLoading(false); 
+        setIsLoading(false);
       }, 500);
 
-      return () => clearTimeout(timer); 
+      return () => clearTimeout(timer);
     }
   }, [query]);
 
@@ -51,13 +51,49 @@ const AutoComplete: React.FC<AutoCompleteProps> = ({ onCheckboxChange, selectedC
     };
   }, []);
 
+  useEffect(() => {
+    if (highlightedIndex !== null && floatingRef.current) {
+      const item = floatingRef.current.querySelectorAll('div[data-index]')[highlightedIndex] as HTMLElement;
+      item?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [highlightedIndex]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
-    setIsListVisible(true); // Show the list when typing
+    setIsListVisible(true);
+    setHighlightedIndex(0); // Reset highlight on new search
   };
 
   const handleInputClick = () => {
-    setIsListVisible(true); // Show the list when the input is clicked
+    setIsListVisible(true);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isListVisible || filteredCurrencies.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        setHighlightedIndex((prevIndex) =>
+          prevIndex === null ? 0 : (prevIndex + 1) % filteredCurrencies.length
+        );
+        break;
+      case 'ArrowUp':
+        setHighlightedIndex((prevIndex) =>
+          prevIndex === null ? filteredCurrencies.length - 1 : (prevIndex - 1 + filteredCurrencies.length) % filteredCurrencies.length
+        );
+        break;
+      case 'Enter':
+        if (highlightedIndex !== null) {
+          onCheckboxChange(filteredCurrencies[highlightedIndex]);
+          // Remove the line that hides the list
+        }
+        break;
+      case 'Escape':
+        setIsListVisible(false);
+        break;
+      default:
+        break;
+    }
   };
 
   return (
@@ -71,6 +107,7 @@ const AutoComplete: React.FC<AutoCompleteProps> = ({ onCheckboxChange, selectedC
           <input
             placeholder="Type to begin searching"
             onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
             className="w-full py-2 px-3 border-none rounded-md focus:outline-none"
           />
         </div>
@@ -86,11 +123,13 @@ const AutoComplete: React.FC<AutoCompleteProps> = ({ onCheckboxChange, selectedC
             ) : filteredCurrencies.length === 0 ? (
               <div className="px-4 py-2 text-gray-500 text-center">No results found</div>
             ) : (
-              filteredCurrencies.map((currency) => (
+              filteredCurrencies.map((currency, index) => (
                 <div
                   key={currency.code}
+                  data-index={index}
                   onClick={() => onCheckboxChange(currency)}
-                  className="cursor-pointer select-none relative py-2 px-4 text-gray-900 hover:bg-blue-600 hover:text-white flex items-center space-x-2"
+                  className={`cursor-pointer select-none relative py-2 px-4 text-gray-900 hover:bg-blue-600 hover:text-white flex items-center space-x-2
+                    ${highlightedIndex === index ? 'bg-blue-600 text-white' : ''}`}
                 >
                   <input
                     type="checkbox"
